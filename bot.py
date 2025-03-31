@@ -69,8 +69,8 @@ def main():
         except requests.exceptions.ConnectionError:
             logger.error('connection error, reconnect...')
             sleep(10)
-        except Exception:
-            logger.exception()
+        except Exception as e:
+            logger.exception(e)
             pass
 
 
