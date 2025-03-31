@@ -64,6 +64,7 @@ def main():
 Преподавателю всё понравилось, можно приступать к следущему уроку'''
             BOT.send_message(chat_id=CHAT_ID,
                              text=text)
+            timestamp = response['last_attempt_timestamp']
         except requests.exceptions.ReadTimeout:
             pass
         except requests.exceptions.ConnectionError:
