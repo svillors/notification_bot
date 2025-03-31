@@ -1,18 +1,42 @@
 import requests
 import telegram
 import os
+import logging
 from time import sleep
 from dotenv import load_dotenv
 
 
+load_dotenv()
+API_TOKEN = os.environ['DEVMAN_API_TOKEN']
+CHAT_ID = os.environ['TG_CHAT_ID']
+BOT = telegram.Bot(token=os.environ['TG_BOT_TOKEN'])
+
+
+class TelegramBotHandler(logging.Handler):
+
+    def __init__(self, bot, chat_id):
+        super().__init__()
+        self.bot = bot
+        self.chat_id = chat_id
+
+    def emit(self, record):
+        if record.exc_info:
+            traceback = self.formatException(record.exc_info)
+            message = f"Бот упал с ошибкой:\n\n{traceback}"
+        else:
+            message = self.format(record)
+        self.bot.send_message(chat_id=self.chat_id, text=message)
+
+
+logger = logging.getLogger('tg_bot_logger')
+logger.setLevel(logging.INFO)
+logger.addHandler(TelegramBotHandler(BOT, CHAT_ID))
+
+
 def main():
-    load_dotenv()
-    bot_token = os.environ['TG_BOT_TOKEN']
-    api_token = os.environ['DEVMAN_API_TOKEN']
-    chat_id = os.environ['TG_CHAT_ID']
-    bot = telegram.Bot(token=bot_token)
+    logger.info("Бот запущен!")
     headers = {
-        'Authorization': f'Token {api_token}',
+        'Authorization': f'Token {API_TOKEN}',
     }
     timestap = None
     while True:
@@ -38,13 +62,15 @@ def main():
                 text = f'''У вас проверили работу "{lesson_title}"
 {lesson_url}\n
 Преподавателю всё понравилось, можно приступать к следущему уроку'''
-            bot.send_message(chat_id=chat_id,
+            BOT.send_message(chat_id=CHAT_ID,
                              text=text)
         except requests.exceptions.ReadTimeout:
             pass
         except requests.exceptions.ConnectionError:
-            print('connection error, reconnect...')
-            sleep(5)
+            logger.error('connection error, reconnect...')
+            sleep(10)
+        except Exception:
+            logger.exception()
 
 
 if __name__ == "__main__":
