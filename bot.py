@@ -38,18 +38,18 @@ def main():
     headers = {
         'Authorization': f'Token {API_TOKEN}',
     }
-    timestap = None
+    timestamp = None
     while True:
         try:
             params = {
-                'timestap': timestap
+                'timestamp': timestamp
             }
             response = requests.get('https://dvmn.org/api/long_polling/',
                                     headers=headers, params=params)
             response = response.json()
 
             if response['status'] == 'timeout':
-                timestap = response.json()['timestamp_to_request']
+                timestamp = response['timestamp_to_request']
                 continue
 
             lesson_title = response['new_attempts'][0]['lesson_title']
@@ -71,6 +71,7 @@ def main():
             sleep(10)
         except Exception:
             logger.exception()
+            pass
 
 
 if __name__ == "__main__":
