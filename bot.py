@@ -5,11 +5,7 @@ import logging
 from time import sleep
 from dotenv import load_dotenv
 
-
-load_dotenv()
-API_TOKEN = os.environ['DEVMAN_API_TOKEN']
-CHAT_ID = os.environ['TG_CHAT_ID']
-BOT = telegram.Bot(token=os.environ['TG_BOT_TOKEN'])
+logger = logging.getLogger('tg_bot_logger')
 
 
 class TelegramBotHandler(logging.Handler):
@@ -28,15 +24,18 @@ class TelegramBotHandler(logging.Handler):
         self.bot.send_message(chat_id=self.chat_id, text=message)
 
 
-logger = logging.getLogger('tg_bot_logger')
-logger.setLevel(logging.INFO)
-logger.addHandler(TelegramBotHandler(BOT, CHAT_ID))
-
-
 def main():
+    load_dotenv()
+    api_token = os.environ['DEVMAN_API_TOKEN']
+    chat_id = os.environ['TG_CHAT_ID']
+    bot = telegram.Bot(token=os.environ['TG_BOT_TOKEN'])
+
+    logger.setLevel(logging.INFO)
+    logger.addHandler(TelegramBotHandler(bot, chat_id))
     logger.info("Бот запущен!")
+
     headers = {
-        'Authorization': f'Token {API_TOKEN}',
+        'Authorization': f'Token {api_token}',
     }
     timestamp = None
     while True:
@@ -46,6 +45,7 @@ def main():
             }
             response = requests.get('https://dvmn.org/api/long_polling/',
                                     headers=headers, params=params)
+            response.raise_for_status()
             response = response.json()
 
             if response['status'] == 'timeout':
@@ -62,7 +62,7 @@ def main():
                 text = f'''У вас проверили работу "{lesson_title}"
 {lesson_url}\n
 Преподавателю всё понравилось, можно приступать к следущему уроку'''
-            BOT.send_message(chat_id=CHAT_ID,
+            bot.send_message(chat_id=chat_id,
                              text=text)
             timestamp = response['last_attempt_timestamp']
         except requests.exceptions.ReadTimeout:
